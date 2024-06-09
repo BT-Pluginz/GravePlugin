@@ -8,6 +8,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -50,7 +51,9 @@ public class GraveListener implements Listener {
         }
 
         Location location = player.getLocation();
+        plugin.getLogger().warning("" + location);
         location = getGroundLocation(location);
+        plugin.getLogger().warning("" + location);
 
         event.getDrops().clear();
         UUID graveId = graveManager.createGrave(player, location, items, armor, offHand);
@@ -58,11 +61,35 @@ public class GraveListener implements Listener {
         graveManager.openGrave(player, graveId);
     }
 
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+        if (block.getType() == Material.PLAYER_HEAD || block.getType() == Material.PLAYER_WALL_HEAD) {
+            Location blockLocation = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
+            for (Grave grave : graveManager.getGraves().values()) {
+                if (grave.getLocation().getBlockX() == blockLocation.getBlockX() &&
+                    grave.getLocation().getBlockY() == blockLocation.getBlockY() &&
+                    grave.getLocation().getBlockZ() == blockLocation.getBlockZ()) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("You cannot break a grave's player head.");
+                    break;
+                }
+            }
+        }
+    }
+
     private Location getGroundLocation(Location location) {
-        while (location.getBlockY() > 0 && location.getBlock().getType() == Material.AIR) {
+        while (location.getBlock().getType() == Material.LAVA || location.getBlock().getType() == Material.WATER) {
+            location.add(0, 1, 0);
+        }
+        while (location.getBlock().getType() == Material.AIR || location.getBlock().getType() == Material.GRASS || location.getBlock().getType() == Material.TALL_GRASS) {
             location.subtract(0, 1, 0);
         }
-        return location.add(0, 1, 0);
+
+        location.setX(location.getBlockX() >= 0 ? Math.round(location.getBlockX()) : Math.floor(location.getBlockX()) + 1);
+        location.setY(Math.round(location.getBlockY()) + 2);
+        location.setZ(location.getBlockZ() >= 0 ? Math.round(location.getBlockZ()) : Math.floor(location.getBlockZ()) + 1);
+        return location;
     }
 
     private void placePlayerHead(Player player, Location location) {

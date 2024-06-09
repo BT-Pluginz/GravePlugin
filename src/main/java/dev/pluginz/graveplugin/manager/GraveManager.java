@@ -5,6 +5,7 @@ import dev.pluginz.graveplugin.util.Grave;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -32,7 +33,12 @@ public class GraveManager {
         this.graveExpirationTime = plugin.getConfig().getLong("graveExpirationTime", 12000);
     }
 
+
     public UUID createGrave(Player player, Location location, ItemStack[] items, ItemStack[] armor, ItemStack offHand) {
+        double x = location.getX() >= 0 ? 0.5 : -0.5;
+        double y = -1.0;
+        double z = location.getZ() >= 0 ? 0.5 : -0.5;
+        location.add(x,y,z);
         ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
         armorStand.setVisible(false);
         armorStand.setGravity(false);
@@ -223,6 +229,12 @@ public class GraveManager {
             if (armorStand != null) {
                 armorStand.remove();
             }
+
+            Block block = grave.getLocation().getBlock();
+            if (block.getType() == Material.PLAYER_HEAD || block.getType() == Material.PLAYER_WALL_HEAD) {
+                block.setType(Material.AIR);
+            }
+
             graves.remove(graveId);
             plugin.getLogger().info("Removed grave with UUID: " + graveId);
         }
@@ -270,5 +282,9 @@ public class GraveManager {
             }
         }
         return null;
+    }
+
+    public Map<UUID, Grave> getGraves() {
+        return graves;
     }
 }
