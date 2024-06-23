@@ -5,6 +5,10 @@ import dev.pluginz.graveplugin.util.Grave;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -14,7 +18,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +43,12 @@ public class GraveManager {
         this.graveExpirationTime = plugin.getConfig().getLong("graveExpirationTime", 12000);
     }
 
+
     public UUID createGrave(Player player, Location location, ItemStack[] items, ItemStack[] armor, ItemStack offHand) {
+        double x = location.getX() >= 0 ? 0.5 : -0.5;
+        double y = -1.0;
+        double z = location.getZ() >= 0 ? 0.5 : -0.5;
+        location.add(x,y,z);
         ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
         armorStand.setVisible(false);
         armorStand.setGravity(false);
@@ -60,6 +76,7 @@ public class GraveManager {
                 plugin.getLogger().info("Item: " + item.getType());
             }
         }
+        this.saveGraves();
         return graveId;
     }
     public boolean isGraveArmorStand(UUID uuid) {
@@ -223,16 +240,16 @@ public class GraveManager {
             if (armorStand != null) {
                 armorStand.remove();
             }
+
+            Block block = grave.getLocation().getBlock();
+            if (block.getType() == Material.PLAYER_HEAD || block.getType() == Material.PLAYER_WALL_HEAD) {
+                block.setType(Material.AIR);
+            }
+
             graves.remove(graveId);
+            this.saveGraves();
             plugin.getLogger().info("Removed grave with UUID: " + graveId);
         }
-    }
-    public void saveGraves() {
-        //TODO: save functionality
-    }
-
-    public void loadGraves() {
-        //TODO: load functionality
     }
 
     private ItemStack createGlassPane(Material material, String name) {
@@ -270,5 +287,133 @@ public class GraveManager {
             }
         }
         return null;
+    }
+
+    public Map<UUID, Grave> getGraves() {
+        return graves;
+    }
+
+    public void saveGraves() {
+        File file = new File(plugin.getDataFolder(), "graves.yml");
+        YamlConfiguration config = new YamlConfiguration();
+
+        for (Map.Entry<UUID, Grave> entry : graves.entrySet()) {
+            String path = "graves." + entry.getKey();
+            Grave grave = entry.getValue();
+            config.set(path + ".location", grave.getLocation().toVector());
+            config.set(path + ".world", grave.getLocation().getWorld().getName());
+            config.set(path + ".armorStandId", grave.getArmorStandId().toString());
+            config.set(path + ".expirationTime", grave.getExpirationTime());
+            config.set(path + ".items", itemStackArrayToBase64(grave.getItems()));
+            config.set(path + ".armorItems", itemStackArrayToBase64(grave.getArmorItems()));
+            config.set(path + ".offHand", itemStackToBase64(grave.getOffHand()));
+        }
+
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not save graves: " + e.getMessage());
+        }
+    }
+
+    private String itemStackArrayToBase64(ItemStack[] items) throws IllegalStateException {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
+
+            // Write the size of the inventory
+            dataOutput.writeInt(items.length);
+
+            // Save every element in the list
+            for (int i = 0; i < items.length; i++) {
+                dataOutput.writeObject(items[i]);
+            }
+
+            // Serialize that array
+            dataOutput.close();
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to save item stacks.", e);
+        }
+    }
+
+    private String itemStackToBase64(ItemStack item) throws IllegalStateException {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
+
+            dataOutput.writeObject(item);
+
+            dataOutput.close();
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to save item stack.", e);
+        }
+    }
+
+    public void loadGraves() {
+        File file = new File(plugin.getDataFolder(), "graves.yml");
+        if (!file.exists()) {
+            return;
+        }
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection section = config.getConfigurationSection("graves");
+
+        for (String key : section.getKeys(false)) {
+            String path = "graves." + key;
+            String worldName = config.getString(path + ".world");
+            if (worldName == null) {
+                plugin.getLogger().severe("World name is null for grave " + key);
+                continue;
+            }
+
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                plugin.getLogger().severe("World " + worldName + " does not exist on the server");
+                continue;
+            }
+
+            Location location = config.getVector(path + ".location").toLocation(Bukkit.getWorld(config.getString(path + ".world")));
+            UUID armorStandId = UUID.fromString(config.getString(path + ".armorStandId"));
+            long expirationTime = config.getLong(path + ".expirationTime");
+            ItemStack[] items = itemStackArrayFromBase64(config.getString(path + ".items"));
+            ItemStack[] armorItems = itemStackArrayFromBase64(config.getString(path + ".armorItems"));
+            ItemStack offHand = itemStackFromBase64(config.getString(path + ".offHand"));
+
+            graves.put(UUID.fromString(key), new Grave(UUID.fromString(key), location, items, armorItems, offHand, armorStandId, expirationTime));
+        }
+    }
+
+    private ItemStack[] itemStackArrayFromBase64(String data) {
+        try {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
+            BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+            ItemStack[] items = new ItemStack[dataInput.readInt()];
+
+            // Read the serialized inventory
+            for (int i = 0; i < items.length; i++) {
+                items[i] = (ItemStack) dataInput.readObject();
+            }
+
+            dataInput.close();
+            return items;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to load item stacks.", e);
+        }
+    }
+
+    private ItemStack itemStackFromBase64(String data) {
+        try {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
+            BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+
+            ItemStack item = (ItemStack) dataInput.readObject();
+
+            dataInput.close();
+            return item;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to load item stack.", e);
+        }
     }
 }

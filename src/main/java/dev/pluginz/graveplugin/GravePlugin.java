@@ -12,6 +12,7 @@ public class GravePlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         graveManager = new GraveManager(this);
+        graveManager.loadGraves();
         getServer().getPluginManager().registerEvents(new GraveListener(this, graveManager), this);
         getCommand("grave").setExecutor(new GraveCommand(this));
     }
