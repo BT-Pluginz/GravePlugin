@@ -1,27 +1,28 @@
 package dev.pluginz.graveplugin.util;
 
+import dev.pluginz.graveplugin.GravePlugin;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 
 public class Grave {
+    private final GravePlugin plugin;
     private final UUID graveId;
     private final Location location;
     private final ItemStack[] items;
     private final ItemStack[] armorItems;
     private final ItemStack offHand;
     private final UUID armorStandId;
-    private final long expirationTime;
 
-    public Grave(UUID graveId, Location location, ItemStack[] items, ItemStack[] armorItems, ItemStack offHand, UUID armorStandId, long expirationTime) {
+    public Grave(GravePlugin plugin, UUID graveId, Location location, ItemStack[] items, ItemStack[] armorItems, ItemStack offHand, UUID armorStandId) {
+        this.plugin = plugin;
         this.graveId = graveId;
         this.location = location;
         this.items = items;
         this.armorItems = armorItems;
         this.offHand = offHand;
         this.armorStandId = armorStandId;
-        this.expirationTime = expirationTime;
     }
 
     public UUID getGraveId() {
@@ -46,9 +47,5 @@ public class Grave {
 
     public UUID getArmorStandId() {
         return armorStandId;
-    }
-
-    public long getExpirationTime() {
-        return expirationTime;
     }
 }

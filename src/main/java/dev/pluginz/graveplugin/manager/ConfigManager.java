@@ -38,7 +38,7 @@ import java.util.Objects;
 
 public class ConfigManager {
     private YamlDocument config;
-    private int combatTimeout;
+    private int graveTimeout;
     private boolean checkVersion;
     private final GravePlugin plugin;
 
@@ -57,7 +57,7 @@ public class ConfigManager {
                     UpdaterSettings.builder().setVersioning(new BasicVersioning("fileversion"))
                             .setOptionSorting(UpdaterSettings.OptionSorting.SORT_BY_DEFAULTS).build());
 
-            combatTimeout = config.getInt("combatTimeout", 30);
+            graveTimeout = config.getInt("graveTimeout", 60);
             checkVersion = config.getBoolean("checkVersion", true);
         } catch (IOException e) {
             //plugin.getLogger().severe("Could not load configuration: " + e.getMessage());
@@ -75,17 +75,11 @@ public class ConfigManager {
     public void reloadConfig() {
         loadConfig();
     }
-    public int getCombatTimeout(){
-        return combatTimeout;
+    public int getGraveTimeout(){
+        return graveTimeout;
     }
-    public void setCombatTimeout(int combatTimeout) throws IOException {
-        if (this.combatTimeout == combatTimeout){
-            return;
-        }else {
-            this.combatTimeout = combatTimeout;
-            config.set("combatTimeout", combatTimeout);
-            config.save();
-        }
+    public void setGraveTimeout(int graveTimeout) {
+        this.graveTimeout = graveTimeout;
     }
 
     public boolean isCheckVersion() {

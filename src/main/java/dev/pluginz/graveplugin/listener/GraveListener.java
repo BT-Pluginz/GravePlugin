@@ -29,9 +29,9 @@ public class GraveListener implements Listener {
     private final GravePlugin plugin;
     private final GraveManager graveManager;
 
-    public GraveListener(GravePlugin plugin, GraveManager graveManager) {
+    public GraveListener(GravePlugin plugin) {
         this.plugin = plugin;
-        this.graveManager = graveManager;
+        this.graveManager = plugin.getGraveManager();
     }
 
     @EventHandler

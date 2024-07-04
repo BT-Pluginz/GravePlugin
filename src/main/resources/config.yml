@@ -1,0 +1,17 @@
+################################
+#      Tub's StatusPlugin      #
+#          by BT Pluginz       #
+################################
+#------------------------------
+# Do not touch this value
+# The Plugin updates the config file using it.
+fileversion: 1
+#------------------------------
+
+# If the Plugin should check for new Versions
+# default: true
+checkVersion: true
+# How long should graves last (in minutes)
+# If you don't want to delete graves
+# default: 60
+graveTimeout: 60
