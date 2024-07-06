@@ -6,8 +6,6 @@ import dev.pluginz.graveplugin.manager.ConfigManager;
 import dev.pluginz.graveplugin.manager.GraveManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.UUID;
-
 public class GravePlugin extends JavaPlugin {
     private GraveManager graveManager;
     private ConfigManager configManager;
@@ -25,7 +23,7 @@ public class GravePlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         graveManager.saveGraves();
-        configManager.saveConfig();
+        //configManager.saveConfig();
     }
 
     public GraveManager getGraveManager() {

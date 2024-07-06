@@ -7,6 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -22,20 +23,19 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class GraveManager {
     private static GravePlugin plugin = null;
     private Map<UUID, Grave> graves;
     private Map<Inventory, UUID> inventoryGraveMap;
+    private long lastUpdateTime;
 
     public GraveManager(GravePlugin plugin) {
         this.plugin = plugin;
         this.graves = new HashMap<>();
         this.inventoryGraveMap = new HashMap<>();
+        this.startGraveTimeoutTask();
     }
 
 
@@ -54,26 +54,35 @@ public class GraveManager {
         UUID graveId = UUID.randomUUID();
         UUID armorStandId = armorStand.getUniqueId();
 
-        graves.put(graveId, new Grave(plugin, graveId, location, items, armor, offHand, armorStandId));
+        long maxActiveTime = plugin.getConfigManager().getGraveTimeout() * 60 * 1000;
+        if(plugin.getConfigManager().getGraveTimeout() == -1) {
+            maxActiveTime = -1;
+        }
+
+        Grave grave = new Grave(player.getName(), graveId, location, items, armor, offHand, armorStandId, maxActiveTime, false);
+        graves.put(graveId, grave);
 
         plugin.getLogger().info("Created grave for player " + player.getName() + " at " + location);
         saveGraves();
         return graveId;
     }
 
-    public static String getColoredTime(int remainingTime) {
-        int hours = remainingTime / 3600;
-        int minutes = (remainingTime % 3600) / 60;
-        int seconds = remainingTime % 60;
+    public static String getColoredTime(Grave grave) {
+        long remainingTime = grave.getMaxActiveTime() - grave.getActiveTime();
+        int remainingSeconds = (int) (remainingTime / 1000); // Convert milliseconds to seconds
+
+        int hours = remainingSeconds / 3600;
+        int minutes = (remainingSeconds % 3600) / 60;
+        int seconds = remainingSeconds % 60;
 
         String time = String.format("%02dh %02dm %02ds", hours, minutes, seconds);
 
-        double ratio = (double) remainingTime / plugin.getConfigManager().getGraveTimeout();
+        double ratio = (double) grave.getActiveTime() / grave.getMaxActiveTime();
         ChatColor color;
-        if (ratio > 0.66) {
+        if (ratio < 0.33) {
             color = ChatColor.GREEN;
-        } else if (ratio > 0.33) {
-            color = ChatColor.GOLD; // ChatColor.GOLD is similar to orange
+        } else if (ratio < 0.66) {
+            color = ChatColor.GOLD;
         } else {
             color = ChatColor.RED;
         }
@@ -81,9 +90,12 @@ public class GraveManager {
     }
 
 
+
     public void openGrave(Player player, UUID graveId) {
         Grave grave = graves.get(graveId);
-        if (grave == null) return;
+        if (grave == null || grave.isExpired()){
+            return;
+        }
         int inventorySize = 54;
 
         Inventory graveInventory = Bukkit.createInventory(null, inventorySize, "Grave of " + player.getName());
@@ -216,6 +228,17 @@ public class GraveManager {
         inventoryGraveMap.remove(inventory);
     }
 
+    private void dropGraveItemsAtLocation(Grave grave) {
+        World world = grave.getLocation().getWorld();
+        if (world == null) return;
+
+        // Drop main inventory items
+        for (ItemStack item : grave.getItems()) {
+            if (item != null) {
+                world.dropItemNaturally(grave.getLocation(), item);
+            }
+        }
+    }
 
     public void removeGrave(UUID graveId) {
         Grave grave = graves.remove(graveId);
@@ -261,6 +284,13 @@ public class GraveManager {
         }
         return null;
     }
+    public UUID getArmorStandIdFromGraveId(UUID graveId) {
+        Grave grave = graves.get(graveId);
+        if (grave != null) {
+            return grave.getArmorStandId();
+        }
+        return null;
+    }
 
     public boolean isGraveArmorStand(UUID uuid) {
         return graves.containsKey(uuid);
@@ -279,6 +309,62 @@ public class GraveManager {
         return graves;
     }
 
+    private void startGraveTimeoutTask() {
+        lastUpdateTime = System.currentTimeMillis();
+        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            long currentTime = System.currentTimeMillis();
+            long elapsedTime = currentTime - lastUpdateTime;
+            lastUpdateTime = currentTime;
+
+            Iterator<Grave> iterator = graves.values().iterator();
+
+            while (iterator.hasNext()) {
+                Grave grave = iterator.next();
+                grave.incrementActiveTime(elapsedTime);
+
+                if (grave.getMaxActiveTime() == -1) {
+                    continue;
+                }
+
+                if (grave.isExpired()) {
+                    if (grave.getLocation().getWorld().isChunkLoaded(grave.getLocation().getBlockX() >> 4, grave.getLocation().getBlockZ() >> 4)) {
+                        if (isPlayerNearby(grave.getLocation(), 50)) {
+                            this.dropGraveItemsAtLocation(grave);
+                            this.removeGrave(grave.getGraveId());
+                            iterator.remove();
+                        }
+                    }
+                } else if (isPlayerNearby(grave.getLocation(), 50)) {
+                    long remainingTime = grave.getMaxActiveTime() - grave.getActiveTime();
+                    String coloredTime = getColoredTime(grave);
+                    updateGraveName(grave.getGraveId(), coloredTime);
+                }
+            }
+        }, 0L, 20L); // 20 ticks = 1 second
+
+        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            saveGraves();
+        }, 0L, 200L); // 200 ticks = 10 seconds
+    }
+
+    private boolean isPlayerNearby(Location location, double radius) {
+        return location.getWorld().getPlayers().stream()
+                .anyMatch(player -> player.getLocation().distanceSquared(location) <= radius * radius);
+    }
+
+    public void updateGraveName(UUID graveId, String coloredTime) {
+        Grave grave = graves.get(graveId);
+        if (grave != null) {
+            Location location = grave.getLocation();
+            World world = location.getWorld();
+            if (world != null) {
+                ArmorStand armorStand = (ArmorStand) Bukkit.getEntity(this.getArmorStandIdFromGraveId(graveId));
+                String playerName = grave.getPlayerName(); // Assuming you have this method in Grave class
+                armorStand.setCustomName(playerName + "'s Grave - " + coloredTime);
+            }
+        }
+    }
+
     public void saveGraves() {
         File file = new File(plugin.getDataFolder(), "graves.yml");
         YamlConfiguration config = new YamlConfiguration();
@@ -286,9 +372,13 @@ public class GraveManager {
         for (Map.Entry<UUID, Grave> entry : graves.entrySet()) {
             String path = "graves." + entry.getKey();
             Grave grave = entry.getValue();
+            config.set(path + ".playerName", grave.getPlayerName());
             config.set(path + ".location", grave.getLocation().toVector());
             config.set(path + ".world", grave.getLocation().getWorld().getName());
             config.set(path + ".armorStandId", grave.getArmorStandId().toString());
+            config.set(path + ".activeTime", grave.getActiveTime());
+            config.set(path + ".maxActiveTime", grave.getMaxActiveTime());
+            config.set(path + ".expired", grave.isExpired());
             config.set(path + ".items", itemStackArrayToBase64(grave.getItems()));
             config.set(path + ".armorItems", itemStackArrayToBase64(grave.getArmorItems()));
             config.set(path + ".offHand", itemStackToBase64(grave.getOffHand()));
@@ -325,14 +415,20 @@ public class GraveManager {
                     continue;
                 }
 
+                String playerName = config.getString(path + ".playerName");
                 Location location = config.getVector(path + ".location").toLocation(world);
                 UUID armorStandId = UUID.fromString(config.getString(path + ".armorStandId"));
-                long expirationTime = config.getLong(path + ".relativeExpirationTime");
+                long activeTime = config.getLong(path + ".activeTime", 0);
+                long maxActiveTime = config.getLong(path + ".maxActiveTime");
+                boolean expired = config.getBoolean(path + ".expired", false);
                 ItemStack[] items = itemStackArrayFromBase64(config.getString(path + ".items"));
                 ItemStack[] armorItems = itemStackArrayFromBase64(config.getString(path + ".armorItems"));
                 ItemStack offHand = itemStackFromBase64(config.getString(path + ".offHand"));
 
-                graves.put(UUID.fromString(key), new Grave(plugin, UUID.fromString(key), location, items, armorItems, offHand, armorStandId));
+                Grave grave =  new Grave(playerName, UUID.fromString(key), location, items, armorItems, offHand, armorStandId, maxActiveTime, expired);
+                graves.put(UUID.fromString(key), grave);
+                grave.incrementActiveTime(activeTime);
+
             }
         }
     }
@@ -368,7 +464,6 @@ public class GraveManager {
             throw new IllegalStateException("Unable to save item stack.", e);
         }
     }
-
 
     private ItemStack[] itemStackArrayFromBase64(String data) {
         try {
