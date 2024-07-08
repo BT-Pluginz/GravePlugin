@@ -22,6 +22,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 public class GraveListener implements Listener {
@@ -108,7 +109,7 @@ public class GraveListener implements Listener {
 
         plugin.getLogger().warning(player.getName() + " clicked on " + entity.getType() + " with the UUID " + entity.getUniqueId());
         Grave grave = graveManager.getGraveFromUUID(entity.getUniqueId());
-        if (grave == null){
+        if (grave == null || !Objects.equals(grave.getPlayerName(), player.getName())) {
             return;
         }
         UUID graveId = grave.getGraveId();
