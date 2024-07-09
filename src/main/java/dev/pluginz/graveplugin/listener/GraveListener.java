@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -132,13 +134,15 @@ public class GraveListener implements Listener {
             if (event.getCurrentItem() != null) {
                 Material type = event.getCurrentItem().getType();
                 UUID graveId = graveManager.getGraveIdFromInventory(inventory);
+                Grave grave = graveManager.getGraveFromGraveID(graveId);
                 if (graveId != null) {
                     if (type == Material.GREEN_STAINED_GLASS_PANE) {
                         player.closeInventory();
                         graveManager.restoreInventory(player, inventory, graveId);
                     } else if (type == Material.RED_STAINED_GLASS_PANE) {
                         player.closeInventory();
-                        graveManager.dropGraveItems(inventory, player, graveId);
+                        graveManager.dropGraveItems(grave);
+                        graveManager.removeGrave(graveId);
                     }
                 }
             }

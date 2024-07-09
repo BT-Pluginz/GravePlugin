@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GraveManager {
     private static GravePlugin plugin = null;
@@ -37,7 +38,6 @@ public class GraveManager {
         this.inventoryGraveMap = new HashMap<>();
         this.startGraveTimeoutTask();
     }
-
 
     public UUID createGrave(Player player, Location location, ItemStack[] items, ItemStack[] armor, ItemStack offHand) {
         double x = location.getX() >= 0 ? 0.5 : -0.5;
@@ -88,8 +88,6 @@ public class GraveManager {
         }
         return color + time;
     }
-
-
 
     public void openGrave(Player player, UUID graveId) {
         Grave grave = graves.get(graveId);
@@ -152,6 +150,9 @@ public class GraveManager {
                 PlayerInventory inv = player.getInventory();
                 for (int i = 0; i < armorItems.length; i++) {
                     ItemStack item = armorItems[i];
+                    if (item == null || item.getType() == Material.AIR) {
+                        continue;
+                    }
                     switch (i) {
                         case 0:
                             if (inv.getHelmet() == null) {
@@ -215,20 +216,7 @@ public class GraveManager {
         }.runTask(plugin);
     }
 
-
-    public void dropGraveItems(Inventory inventory, Player player, UUID graveId) {
-        Location location = player.getLocation();
-        for (int i = 0; i < 45; i++) {
-            ItemStack item = inventory.getItem(i);
-            if (item != null && item.getType() != Material.AIR) {
-                location.getWorld().dropItemNaturally(location, item);
-            }
-        }
-        removeGrave(graveId);
-        inventoryGraveMap.remove(inventory);
-    }
-
-    private void dropGraveItemsAtLocation(Grave grave) {
+    public void dropGraveItems(Grave grave) {
         World world = grave.getLocation().getWorld();
         if (world == null) return;
 
@@ -261,6 +249,7 @@ public class GraveManager {
             plugin.getLogger().info("Removed grave with UUID: " + graveId);
         }
     }
+
     private ItemStack createGlassPane(Material material, String name) {
         ItemStack pane = new ItemStack(material);
         ItemMeta meta = pane.getItemMeta();
@@ -270,7 +259,6 @@ public class GraveManager {
         }
         return pane;
     }
-
 
     public UUID getGraveIdFromInventory(Inventory inventory) {
         return inventoryGraveMap.get(inventory);
@@ -284,6 +272,7 @@ public class GraveManager {
         }
         return null;
     }
+
     public UUID getArmorStandIdFromGraveId(UUID graveId) {
         Grave grave = graves.get(graveId);
         if (grave != null) {
@@ -303,6 +292,10 @@ public class GraveManager {
             }
         }
         return null;
+    }
+
+    public Grave getGraveFromGraveID(UUID graveId) {
+        return graves.get(graveId);
     }
 
     public Map<UUID, Grave> getGraves() {
@@ -329,7 +322,7 @@ public class GraveManager {
                 if (grave.isExpired()) {
                     if (grave.getLocation().getWorld().isChunkLoaded(grave.getLocation().getBlockX() >> 4, grave.getLocation().getBlockZ() >> 4)) {
                         if (isPlayerNearby(grave.getLocation(), 50)) {
-                            this.dropGraveItemsAtLocation(grave);
+                            this.dropGraveItems(grave);
                             this.removeGrave(grave.getGraveId());
                             iterator.remove();
                         }
