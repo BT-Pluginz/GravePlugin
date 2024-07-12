@@ -25,6 +25,7 @@
 package dev.pluginz.graveplugin;
 
 import dev.pluginz.graveplugin.command.GraveCommand;
+import dev.pluginz.graveplugin.command.GraveTabCompleter;
 import dev.pluginz.graveplugin.listener.*;
 import dev.pluginz.graveplugin.manager.*;
 import dev.pluginz.graveplugin.util.VersionChecker;
@@ -80,6 +81,7 @@ public class GravePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
         getCommand("grave").setExecutor(new GraveCommand(this));
+        getCommand("grave").setTabCompleter(new GraveTabCompleter());
     }
 
     @Override

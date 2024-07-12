@@ -69,7 +69,7 @@ public class GraveCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.GREEN + "Version: " + plugin.getVersion());
         if (plugin.getConfigManager().isCheckVersion()) {
             if (plugin.isNewVersion()) {
-                sender.sendMessage(ChatColor.YELLOW + "A new version is available! Update at: " + ChatColor.UNDERLINE + "https://modrinth.com/project/bts-graves");
+                sender.sendMessage(ChatColor.YELLOW + "A new version is available! Update at: " + ChatColor.UNDERLINE + "https://modrinth.com/project/bt-graves");
             } else {
                 sender.sendMessage(ChatColor.GREEN + "You are using the latest version!");
             }
