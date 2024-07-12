@@ -1,21 +1,37 @@
+/*
+ * This file is part of BT's Graves, licensed under the MIT License.
+ *
+ *  Copyright (c) BT Pluginz <github@tubyoub.de>
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
+
 package dev.pluginz.graveplugin.command;
 
 import dev.pluginz.graveplugin.GravePlugin;
 import dev.pluginz.graveplugin.manager.GraveManager;
-import dev.pluginz.graveplugin.util.Grave;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class GraveCommand implements CommandExecutor {
     private final GravePlugin plugin;
@@ -53,7 +69,7 @@ public class GraveCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.GREEN + "Version: " + plugin.getVersion());
         if (plugin.getConfigManager().isCheckVersion()) {
             if (plugin.isNewVersion()) {
-                sender.sendMessage(ChatColor.YELLOW + "A new version is available! Update at: " + ChatColor.UNDERLINE + "https://modrinth.com/project/bts-combatlogger");
+                sender.sendMessage(ChatColor.YELLOW + "A new version is available! Update at: " + ChatColor.UNDERLINE + "https://modrinth.com/project/bts-graves");
             } else {
                 sender.sendMessage(ChatColor.GREEN + "You are using the latest version!");
             }
@@ -61,7 +77,7 @@ public class GraveCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.GOLD +  "Version checking is disabled!");
         }
         TextComponent githubLink = new TextComponent(ChatColor.DARK_GRAY + "" + ChatColor.UNDERLINE + "GitHub");
-        githubLink.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/BT-Pluginz/CombatLogger"));
+        githubLink.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/BT-Pluginz/GravePlugin"));
         githubLink.setUnderlined(true);
         sender.spigot().sendMessage(githubLink);
 
@@ -70,12 +86,12 @@ public class GraveCommand implements CommandExecutor {
         discordLink.setUnderlined(true);
         sender.spigot().sendMessage(discordLink);
 
-        sender.sendMessage("If you have any issues please report them on GitHub or on the Discord.");
+        sender.sendMessage("If you have any issues please report them on GitHub or on our the Discord.");
         plugin.sendPluginMessages(sender, "line");
     }
 
     public boolean handleReload(CommandSender sender) {
-        if (sender.hasPermission("graveplugin.reload")) {
+        if (sender.hasPermission("btgraves.reload")) {
             plugin.getConfigManager().reloadConfig();
             sender.sendMessage(prefix + "The config reloaded.");
         } else {

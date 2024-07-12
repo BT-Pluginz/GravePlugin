@@ -1,5 +1,5 @@
 /*
- * This file is part of BT's GravePlugin, licensed under the MIT License.
+ * This file is part of BT's Graves, licensed under the MIT License.
  *
  *  Copyright (c) BT Pluginz <github@tubyoub.de>
  *
@@ -39,7 +39,9 @@ import java.util.Objects;
 public class ConfigManager {
     private YamlDocument config;
     private int graveTimeout;
+    private int expPercentage;
     private boolean checkVersion;
+    private boolean smallArmorStand;
     private final GravePlugin plugin;
 
     public ConfigManager(GravePlugin plugin) {
@@ -57,10 +59,20 @@ public class ConfigManager {
                     UpdaterSettings.builder().setVersioning(new BasicVersioning("fileversion"))
                             .setOptionSorting(UpdaterSettings.OptionSorting.SORT_BY_DEFAULTS).build());
 
-            graveTimeout = config.getInt("graveTimeout", 60);
             checkVersion = config.getBoolean("checkVersion", true);
+            graveTimeout = config.getInt("graveTimeout", 60);
+            smallArmorStand = config.getBoolean("smallArmorStand", true);
+            expPercentage = config.getInt("expPercentage", 100);
+            plugin.getLogger().warning(expPercentage + "");
+            if (expPercentage < 0) {
+                expPercentage = 0;
+                config.set("expPercentage", 0);
+            } else if (expPercentage > 100) {
+                expPercentage = 100;
+                config.set("expPercentage", 100);
+            }
+            plugin.getLogger().warning(expPercentage + "");
         } catch (IOException e) {
-            //plugin.getLogger().severe("Could not load configuration: " + e.getMessage());
             plugin.getLogger().severe("Error while loading the configuration");
         }
     }
@@ -80,6 +92,14 @@ public class ConfigManager {
     }
     public void setGraveTimeout(int graveTimeout) {
         this.graveTimeout = graveTimeout;
+    }
+
+    public boolean isSmallArmorStand() {
+        return smallArmorStand;
+    }
+
+    public int getExpPercentage() {
+        return expPercentage;
     }
 
     public boolean isCheckVersion() {

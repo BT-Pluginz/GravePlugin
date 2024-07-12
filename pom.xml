@@ -9,7 +9,7 @@
   <version>1.0</version>
   <packaging>jar</packaging>
 
-  <name>BT's GravePlugin</name>
+  <name>BT Graves</name>
 
   <properties>
     <java.version>1.8</java.version>

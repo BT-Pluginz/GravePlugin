@@ -1,5 +1,5 @@
 /*
- * This file is part of BT's GravePlugin, licensed under the MIT License.
+ * This file is part of BT's Graves, licensed under the MIT License.
  *
  *  Copyright (c) BT Pluginz <github@tubyoub.de>
  *
@@ -21,6 +21,7 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
+
 package dev.pluginz.graveplugin.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -53,7 +54,7 @@ public class VersionChecker {
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("User-Agent", "BTPluginz/GravePlugin/"+ version );
+            connection.setRequestProperty("User-Agent", "BTPluginz/GravePlugin/"+ version + " (github@tubyoub.de)");
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {

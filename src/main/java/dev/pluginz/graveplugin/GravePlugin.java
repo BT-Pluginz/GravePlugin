@@ -1,24 +1,58 @@
+/*
+ * This file is part of BT's Graves, licensed under the MIT License.
+ *
+ *  Copyright (c) BT Pluginz <github@tubyoub.de>
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
+
 package dev.pluginz.graveplugin;
 
 import dev.pluginz.graveplugin.command.GraveCommand;
-import dev.pluginz.graveplugin.listener.GraveListener;
-import dev.pluginz.graveplugin.manager.ConfigManager;
-import dev.pluginz.graveplugin.manager.GraveManager;
+import dev.pluginz.graveplugin.listener.*;
+import dev.pluginz.graveplugin.manager.*;
 import dev.pluginz.graveplugin.util.VersionChecker;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class GravePlugin extends JavaPlugin {
     private final String version = "1.0";
-    private final String project = "qiyG0tnT";
+    private final String project = "WGgaXko0";
 
     private GraveManager graveManager;
+    private GraveInventoryManager graveInventoryManager;
+    private GravePersistenceManager gravePersistenceManager;
+    private GraveTimeoutManager graveTimeoutManager;
     private ConfigManager configManager;
     private boolean newVersion;
 
     @Override
     public void onEnable() {
+        this.getLogger().info("_____________________________ ");
+        this.getLogger().info("\\______   \\__    ___/  _____/ ");
+        this.getLogger().info(" |    |  _/ |    | /   \\  ___ ");
+        this.getLogger().info(" |    |   \\ |    | \\    \\_\\  \\");
+        this.getLogger().info(" |______  / |____|  \\______  /" + "     BT Graves v" + version);
+        this.getLogger().info("        \\/                 \\/ " + "     Running on " + Bukkit.getServer().getName() + " using Blackmagic");
+
         configManager = new ConfigManager(this);
         configManager.loadConfig();
 
@@ -30,15 +64,33 @@ public class GravePlugin extends JavaPlugin {
         }
 
         graveManager = new GraveManager(this);
-        graveManager.loadGraves();
-        getServer().getPluginManager().registerEvents(new GraveListener(this), this);
+        graveInventoryManager = new GraveInventoryManager(this);
+        gravePersistenceManager = new GravePersistenceManager(this);
+        graveTimeoutManager = new GraveTimeoutManager(this);
+
+        graveManager.setPersistenceManager(gravePersistenceManager);
+        gravePersistenceManager.loadGraves();
+        graveTimeoutManager.startGraveTimeoutTask();
+        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
+        getServer().getPluginManager().registerEvents(new BlockExplodeListener(this), this);
+        getServer().getPluginManager().registerEvents(new BlockPistonExtendListener(this), this);
+        getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
+        getServer().getPluginManager().registerEvents(new LiquidFlowListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
+        getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
         getCommand("grave").setExecutor(new GraveCommand(this));
     }
 
     @Override
     public void onDisable() {
-        graveManager.saveGraves();
-        //configManager.saveConfig();
+        gravePersistenceManager.saveGraves();
+        configManager.saveConfig();
+        this.getLogger().info("-----");
+        this.getLogger().info(" ");
+        this.getLogger().warning("If this is a reload please note that this could break the Plugin");
+        this.getLogger().info(" ");
+        this.getLogger().info("-----");
     }
 
     public String getPluginPrefix() {
@@ -47,7 +99,7 @@ public class GravePlugin extends JavaPlugin {
 
     public void sendPluginMessages(CommandSender sender, String type) {
         if ("title".equals(type)) {
-            sender.sendMessage(ChatColor.BLACK + "◢◤" + ChatColor.DARK_GRAY + "BT" + ChatColor.BLACK + "'"+ ChatColor.DARK_GRAY + "s" + ChatColor.DARK_PURPLE + " CombatLogger" + ChatColor.BLACK + "◥◣");
+            sender.sendMessage(ChatColor.BLACK + "◢◤" + ChatColor.DARK_GRAY + "BT" + ChatColor.BLACK + "'"+ ChatColor.DARK_GRAY + "s" + ChatColor.DARK_PURPLE + " Graves" + ChatColor.BLACK + "◥◣");
         } else if ("line".equals(type)) {
             sender.sendMessage(ChatColor.BLACK + "-" + ChatColor.DARK_GRAY + "-" + ChatColor.GRAY + "-" + ChatColor.YELLOW + "-" + ChatColor.LIGHT_PURPLE + "-" + ChatColor.DARK_PURPLE + "-"
                 + ChatColor.BLACK + "-" + ChatColor.DARK_GRAY + "-" + ChatColor.GRAY + "-" + ChatColor.YELLOW + "-" + ChatColor.LIGHT_PURPLE + "-" + ChatColor.DARK_PURPLE + "-"
@@ -67,5 +119,15 @@ public class GravePlugin extends JavaPlugin {
     }
     public ConfigManager getConfigManager(){
         return configManager;
+    }
+
+    public GraveInventoryManager getGraveInventoryManager() {
+        return graveInventoryManager;
+    }
+    public GravePersistenceManager getGravePersistenceManager() {
+        return gravePersistenceManager;
+    }
+    public GraveTimeoutManager getGraveTimeoutManager() {
+        return graveTimeoutManager;
     }
 }

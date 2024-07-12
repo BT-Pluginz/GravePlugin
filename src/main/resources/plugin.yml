@@ -1,14 +1,11 @@
-name: BTsGravePlugin
+name: BTGraves
 version: '${project.version}'
 main: dev.pluginz.graveplugin.GravePlugin
 api-version: 1.13
 description: A plugin to create graves on player death.
 permissions:
-  graveplugin.admin.access:
+  btgraves.reload:
     description: Allows access to all graves.
-    default: op
-  graveplugin.admin.manage:
-    description: Allows management of graves.
     default: op
 commands:
   grave:
