@@ -29,6 +29,7 @@ import dev.pluginz.graveplugin.command.GraveTabCompleter;
 import dev.pluginz.graveplugin.listener.*;
 import dev.pluginz.graveplugin.manager.*;
 import dev.pluginz.graveplugin.util.VersionChecker;
+import dev.pluginz.graveplugin.util.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -37,6 +38,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class GravePlugin extends JavaPlugin {
     private final String version = "1.0";
     private final String project = "WGgaXko0";
+    private final int pluginId = 22622;
 
     private GraveManager graveManager;
     private GraveInventoryManager graveInventoryManager;
@@ -82,6 +84,8 @@ public class GravePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
         getCommand("grave").setExecutor(new GraveCommand(this));
         getCommand("grave").setTabCompleter(new GraveTabCompleter());
+
+        Metrics metrics = new Metrics(this, pluginId);
     }
 
     @Override
