@@ -32,6 +32,9 @@ This Minecraft Plugin spawn a Grave when they die which saves their inventory an
   - Liquid proof
   - Explosion proof
   - piston proof
+- Graves Save to a file, so they will retain themselves after a restart or server crash.
+- Timer for how long should last before dropping everything on the ground.
+- Grave Names are only updated when a player is in reach of the Grave to prevent unnecessary lag.
 #### Config
 - disable/ enable Version checking 
 - change the armor stand which is used by the Plugin. Big/small 
