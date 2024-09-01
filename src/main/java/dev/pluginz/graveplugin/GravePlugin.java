@@ -36,7 +36,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class GravePlugin extends JavaPlugin {
-    private final String version = "1.0";
+    private final String version = "1.1";
     private final String project = "WGgaXko0";
     private final int pluginId = 22622;
 
