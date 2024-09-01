@@ -100,8 +100,10 @@ public class GraveTimeoutManager {
             World world = location.getWorld();
             if (world != null) {
                 ArmorStand armorStand = (ArmorStand) Bukkit.getEntity(graveManager.getArmorStandIdFromGraveId(graveId));
-                String playerName = grave.getPlayerName();
-                armorStand.setCustomName(playerName + "'s Grave - " + coloredTime);
+                if (armorStand != null) {
+                    String playerName = grave.getPlayerName();
+                    armorStand.setCustomName(playerName + "'s Grave - " + coloredTime);
+                }
             }
         }
     }
