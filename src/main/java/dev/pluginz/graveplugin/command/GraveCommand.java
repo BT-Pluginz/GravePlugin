@@ -32,6 +32,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
 
 public class GraveCommand implements CommandExecutor {
     private final GravePlugin plugin;
@@ -57,6 +60,8 @@ public class GraveCommand implements CommandExecutor {
                 return true;
             case "reload":
                 return handleReload(sender);
+            case "open":
+                return handleOpen(sender, args);
             default:
                 sendHelp(sender);
                 return true;
@@ -97,6 +102,29 @@ public class GraveCommand implements CommandExecutor {
         } else {
             sender.sendMessage(prefix + ChatColor.RED +  "You do not have permission to reload the config.");
         }
+        return true;
+    }
+
+
+    public boolean handleOpen(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("btgraves.admin.open")) {
+            sender.sendMessage(prefix + ChatColor.RED + "You do not have permission to open graves.");
+            return true;
+        }
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(prefix + ChatColor.RED + "Only players can open graves.");
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage(prefix + ChatColor.RED + "Please provide a grave ID.");
+            return true;
+        }
+
+        String graveId = args[1];
+        Player player = (Player) sender;
+        plugin.getGraveInventoryManager().openGrave(player, UUID.fromString(graveId));
+
         return true;
     }
 

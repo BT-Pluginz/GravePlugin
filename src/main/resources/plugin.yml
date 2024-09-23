@@ -7,6 +7,9 @@ permissions:
   btgraves.reload:
     description: Allows access to all graves.
     default: op
+  btgraves.admin.open:
+    description: Allows admins to open a grave using the Grave ID
+    default: op
 commands:
   grave:
     description: Grave management command

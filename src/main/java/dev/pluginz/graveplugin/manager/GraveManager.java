@@ -72,6 +72,7 @@ public class GraveManager {
         graves.put(graveId, grave);
 
         gravePersistenceManager.saveGraves();
+        player.sendMessage(plugin.getPluginPrefix() + ChatColor.DARK_PURPLE +  "A grave got successfully created at: " + ChatColor.LIGHT_PURPLE +  location.getX()  + " "+ ChatColor.RED + location.getY() + " " + ChatColor.LIGHT_PURPLE + location.getZ());
         return graveId;
     }
 
