@@ -88,7 +88,16 @@ public class PlayerDeathListener implements Listener {
         int maxSearchDistance = 10; // Adjust this value as needed
         Location original = location.clone();
         boolean isNether = world.getEnvironment() == World.Environment.NETHER;
-        int netherRoofY = isNether ? 127 : Integer.MAX_VALUE; // Nether roof is at Y=127
+        boolean isEnd = world.getEnvironment() == World.Environment.THE_END;
+
+        int minY = isNether || isEnd ? 0 : -64;
+        int maxY = isNether || isEnd ? 255 : 320;
+
+        if (original.getY() < minY) {
+            original.setY(minY + 1);
+        } else if (original.getY() > maxY) {
+            original.setY(maxY - 1);
+        }
 
         // First, check the original location
         if (isSuitableLocation(original)) {
@@ -98,7 +107,7 @@ public class PlayerDeathListener implements Listener {
         // Search downwards first
         for (int y = 1; y <= maxSearchDistance; y++) {
             Location check = original.clone().subtract(0, y, 0);
-            if (isSuitableLocation(check) && (check.getY() <= netherRoofY || original.getY() > netherRoofY)) {
+            if (isSuitableLocation(check) && (check.getY() <= maxY || original.getY() > maxY)) {
                 return adjustLocation(check);
             }
         }
@@ -106,7 +115,7 @@ public class PlayerDeathListener implements Listener {
         // If not found, search upwards
         for (int y = 1; y <= maxSearchDistance; y++) {
             Location check = original.clone().add(0, y, 0);
-            if (isSuitableLocation(check) && (check.getY() <= netherRoofY || original.getY() > netherRoofY)) {
+            if (isSuitableLocation(check) && (check.getY() <= maxY || original.getY() > maxY)) {
                 return adjustLocation(check);
             }
         }
@@ -120,8 +129,8 @@ public class PlayerDeathListener implements Listener {
                finalLocation.getBlock().getType() == Material.BUBBLE_COLUMN) {
             finalLocation.add(0, 1, 0);
             // Prevent moving above Nether roof if death was below it
-            if (isNether && finalLocation.getY() > netherRoofY && original.getY() <= netherRoofY) {
-                finalLocation.setY(netherRoofY);
+            if (isNether && finalLocation.getY() > maxY && original.getY() <= maxY) {
+                finalLocation.setY(maxY);
                 break;
             }
         }
