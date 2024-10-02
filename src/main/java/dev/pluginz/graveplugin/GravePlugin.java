@@ -35,6 +35,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Random;
+
 public class GravePlugin extends JavaPlugin {
     private final String version = "1.2";
     private final String project = "WGgaXko0";
@@ -45,7 +47,7 @@ public class GravePlugin extends JavaPlugin {
     private GravePersistenceManager gravePersistenceManager;
     private GraveTimeoutManager graveTimeoutManager;
     private ConfigManager configManager;
-    private boolean newVersion;
+    private VersionChecker.VersionInfo versionInfo;
 
     @Override
     public void onEnable() {
@@ -60,10 +62,42 @@ public class GravePlugin extends JavaPlugin {
         configManager.loadConfig();
 
         if (configManager.isCheckVersion()) {
-            newVersion = VersionChecker.isNewVersionAvailable(version, project);
-            if (newVersion) {
-                this.getLogger().warning("There is a new Version available for BT's CombatLogger");
+            versionInfo = VersionChecker.isNewVersionAvailable(version, project);
+            if (versionInfo.isNewVersionAvailable) {
+                switch  (versionInfo.urgency) {
+                    case CRITICAL:
+                        this.getLogger().warning("--- Important Update --- ");
+                        this.getLogger().warning("There is a new critical update for BT Graves available");
+                        this.getLogger().warning("please update NOW");
+                        this.getLogger().warning("https://modrinth.com/plugin/bt-graves/version/" + versionInfo.latestVersion);
+                        this.getLogger().warning("backup your config");
+                        this.getLogger().warning("---");
+                        break;
+                    case HIGH:
+                        this.getLogger().warning("--- Important Update --- ");
+                        this.getLogger().warning("There is a new critical update for BT Graves available");
+                        this.getLogger().warning("please update NOW");
+                        this.getLogger().warning("https://modrinth.com/plugin/bt-graves/version/" + versionInfo.latestVersion);
+                        this.getLogger().warning("backup your config");
+                        this.getLogger().warning("---");
+                        break;
+                    case NORMAL:
+                        this.getLogger().warning("There is a new update for BT Graves available");
+                        this.getLogger().warning("https://modrinth.com/plugin/bt-graves/version/" + versionInfo.latestVersion);
+                        this.getLogger().warning("backup your config");
+                        break;
+                    case LOW:
+                        // beta update urgency currently not needed
+                        break;
+                    case NONE:
+                        // alpha update urgency currently not needed
+                        break;
+                }
+            } else {
+                this.getLogger().info(" You are running the latest version of BT Graves");
             }
+        } else {
+            this.getLogger().info("You have automatic checks for new updates disabled. Enable them in the config to stay up to date");
         }
 
         graveManager = new GraveManager(this);
@@ -79,6 +113,7 @@ public class GravePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockPistonExtendListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
         getServer().getPluginManager().registerEvents(new LiquidFlowListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
@@ -118,7 +153,10 @@ public class GravePlugin extends JavaPlugin {
         return version;
     }
     public boolean isNewVersion(){
-        return newVersion;
+        return versionInfo.isNewVersionAvailable;
+    }
+    public VersionChecker.VersionInfo getVersionInfo(){
+        return versionInfo;
     }
     public GraveManager getGraveManager() {
         return graveManager;

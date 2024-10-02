@@ -48,7 +48,7 @@ public class VersionChecker {
      * @param version The current version of the plugin.
      * @return A boolean indicating whether a new version is available.
      */
-    public static boolean isNewVersionAvailable(String version, String project) {
+    public static VersionInfo isNewVersionAvailable(String version, String project) {
         try {
             URL url = new URL("https://api.modrinth.com/v2/project/" + project + "/version");
 
@@ -63,21 +63,62 @@ public class VersionChecker {
 
                     List<Map<String, Object>> versions = parseJsonArray(jsonResponse);
                     if (!versions.isEmpty()) {
-                        String latestVersion = (String) versions.get(0).get("version_number");
+                        Map<String, Object> latestVersion = versions.get(0);
+                        String latestVersionNumber = (String) latestVersion.get("version_number");
+                        String changelog = (String) latestVersion.get("changelog");
+                        String versionType = (String) latestVersion.get("version_type");
 
-                        String currentVersion = version;
-                        return !latestVersion.equals(currentVersion);
-                    } else {
-                        return false;
+                        if (!latestVersionNumber.equals(version)) {
+                            UpdateUrgency urgency = determineUrgency(changelog, versionType);
+                            return new VersionInfo(true, latestVersionNumber, changelog, urgency);
+                        } else {
+                            return new VersionInfo(false, version, null, UpdateUrgency.NONE);
+                        }
                     }
                 }
-            } else {
-                return false;
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
         }
+        return new VersionInfo(false, version, null, UpdateUrgency.NONE);
+    }
+
+    private static UpdateUrgency determineUrgency(String changelog, String versionType) {
+        if (versionType.equals("release")) {
+            if (changelog.toLowerCase().contains("security") || changelog.toLowerCase().contains("critical")) {
+                return UpdateUrgency.CRITICAL;
+            } else if (changelog.toLowerCase().contains("important") || changelog.toLowerCase().contains("major")) {
+                return UpdateUrgency.HIGH;
+            } else {
+                return UpdateUrgency.NORMAL;
+            }
+        } else if (versionType.equals("beta")) {
+            return UpdateUrgency.LOW;
+        } else {
+            return UpdateUrgency.NONE;
+        }
+    }
+
+    public static class VersionInfo {
+        public final boolean isNewVersionAvailable;
+        public final String latestVersion;
+        public final String changelog;
+        public final UpdateUrgency urgency;
+
+        public VersionInfo(boolean isNewVersionAvailable, String latestVersion, String changelog, UpdateUrgency urgency) {
+            this.isNewVersionAvailable = isNewVersionAvailable;
+            this.latestVersion = latestVersion;
+            this.changelog = changelog;
+            this.urgency = urgency;
+        }
+    }
+
+    public enum UpdateUrgency {
+        CRITICAL,
+        HIGH,
+        NORMAL,
+        LOW,
+        NONE
     }
 
     /**
