@@ -53,7 +53,7 @@ public class PlayerJoinListener implements Listener {
         Player player = event.getPlayer();
 
         // Check if the player has admin privileges
-        if (player.hasPermission("graveplugin.admin") && plugin.getConfigManager().isCheckVersion()) {
+        if (player.hasPermission("btgraves.admin") && plugin.getConfigManager().isCheckVersion()) {
             // Alert if a critical update is available
             if (versionInfo.isNewVersionAvailable && versionInfo.urgency == UpdateUrgency.CRITICAL || versionInfo.urgency == UpdateUrgency.HIGH) {
                 player.sendMessage(  plugin.getPluginPrefix() + ChatColor.RED + "A critical update for BT Grave is available!");
