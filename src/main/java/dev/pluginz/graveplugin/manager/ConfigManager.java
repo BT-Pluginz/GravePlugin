@@ -63,7 +63,6 @@ public class ConfigManager {
             graveTimeout = config.getInt("graveTimeout", 60);
             smallArmorStand = config.getBoolean("smallArmorStand", true);
             expPercentage = config.getInt("expPercentage", 100);
-            plugin.getLogger().warning(expPercentage + "");
             if (expPercentage < 0) {
                 expPercentage = 0;
                 config.set("expPercentage", 0);
@@ -71,7 +70,6 @@ public class ConfigManager {
                 expPercentage = 100;
                 config.set("expPercentage", 100);
             }
-            plugin.getLogger().warning(expPercentage + "");
         } catch (IOException e) {
             plugin.getLogger().severe("Error while loading the configuration");
         }
