@@ -180,7 +180,12 @@ public class GraveInventoryManager {
 
                 Grave grave = graveManager.getGrave(graveId);
                 player.setLevel(player.getLevel() + grave.getLvl());
-                player.setExp(player.getExp() + grave.getExp());
+
+                float exp = player.getExp() + grave.getExp();
+                if (exp < 0 || exp > 1) {
+                    exp = 0;
+                }
+                player.setExp(exp);
 
                 graveManager.removeGrave(graveId);
                 inventoryGraveMap.remove(inventory);

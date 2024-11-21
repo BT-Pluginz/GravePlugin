@@ -67,6 +67,10 @@ public class PlayerDeathListener implements Listener {
         ItemStack offHand = player.getInventory().getItemInOffHand();
         int lvl = (int) (player.getLevel() * ((double) plugin.getConfigManager().getExpPercentage() / 100));
         float xp = player.getExp();
+        // When the Grave saves a faulty xp it will cause a duplication bug
+        if (xp < 0 || xp > 1){
+            xp = 0;
+        }
 
         if (!hasItems) {
             return;
